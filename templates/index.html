@@ -1,31 +1,341 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>AI News Scraper</title>
+    <meta http-equiv="refresh" content="5">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Fonts for Professional Look -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .article { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        .title { font-weight: bold; font-size: 1.2em; margin-bottom: 3px; }
-        .url { font-size: 0.9em; color: #555; margin-bottom: 10px; }
-        .content { margin-top: 10px; white-space: pre-line; }
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 98vw;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(60,72,100,0.11);
+            padding: 30px 20px 20px 20px;
+        }
+        h1 {
+            font-weight: 700;
+            font-size: 2.2em;
+            color: #2a2e62;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            text-align: center;
+        }
+        .subheading {
+            text-align: center;
+            color: #5361c2;
+            margin-bottom: 28px;
+            font-size: 1.08em;
+        }
+        .loading {
+            font-size: 1.12em;
+            color: #27ae60;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .news-list {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 24px;
+            padding-bottom: 10px;
+        }
+        .article {
+            background: #f7f8fc;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(60,72,100,0.09);
+            padding: 22px 22px 14px 22px;
+            min-width: 340px;
+            max-width: 420px;
+            min-height: 220px;
+            transition: box-shadow 0.22s;
+            position: relative;
+            overflow: hidden;
+            flex: 0 0 340px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .article:hover {
+            box-shadow: 0 10px 24px rgba(60,72,100,0.15);
+            background: #e4eafe;
+        }
+        .title {
+            font-weight: 700;
+            font-size: 1.15em;
+            color: #24347c;
+            margin-bottom: 5px;
+        }
+        .url {
+            font-size: 0.95em;
+            color: #626c91;
+            margin-bottom: 10px;
+            overflow-wrap: break-word;
+        }
+        .url a {
+            color: #6e7cff;
+            text-decoration: none;
+            transition: color 0.22s;
+        }
+        .url a:hover {
+            color: #1d2982;
+            text-decoration: underline;
+        }
+        .summary {
+            background: #eaf0fe;
+            padding: 13px 11px;
+            border-radius: 8px;
+            margin-bottom: 13px;
+            color: #374151;
+            line-height: 1.55;
+            font-size: 1.04em;
+            min-height: 60px;
+            position: relative;
+        }
+        .summary strong {
+            color: #2a2e62;
+        }
+        .read-more-btn {
+            display: inline-block;
+            padding: 8px 20px 8px 18px;
+            background: linear-gradient(90deg, #6e7cff 60%, #5361c2 100%);
+            color: #fff;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background 0.22s, transform 0.17s;
+            margin-top: 8px;
+            box-shadow: 0 2px 6px rgba(60,72,100,0.11);
+            position: relative;
+        }
+        .read-more-btn i {
+            margin-left: 8px;
+            font-size: 1.05em;
+            vertical-align: middle;
+        }
+        .read-more-btn:hover {
+            background: linear-gradient(90deg, #5361c2 30%, #2a2e62 100%);
+            color: #fffbfc;
+        }
+        @media (max-width: 980px) {
+            .container { padding: 13px 1vw;}
+            .news-list { gap: 14px;}
+            .article { min-width: 80vw; max-width: 90vw;}
+        }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.3em;}
+            .news-list { gap: 7vw;}
+            .article { min-width: 93vw; max-width: 98vw; padding: 10px 6px;}
+        }
     </style>
 </head>
 <body>
-    <h1>Latest Scraped News</h1>
-    {% for article in articles %}
-        <div class="article">
-            {% if article.text.startswith('Error:') %}
-                <div class="title" style="color: red;">{{ article.title }}</div>
-                <div class="url"><a href="{{ article.url }}" target="_blank">{{ article.url }}</a></div>
-                <p>{{ article.text }}</p>
-            {% else %}
-                <div class="title">{{ article.title }}</div>
-                <div class="url"><a href="{{ article.url }}" target="_blank">{{ article.url }}</a></div>
-                <div class="content">
-                    {{ article.text | safe }}
+    <div class="container">
+        <h1><i class="fa-solid fa-robot"></i> AI News Scraper</h1>
+        <div class="subheading">Stay updated with the latest headlines, summarized by AI. <i class="fa-solid fa-bolt"></i></div>
+        {% if processing %}
+            <div class="loading"><i class="fa-solid fa-spinner"></i> Processing articles, please wait...</div>
+        {% endif %}
+        <div class="news-list">
+            {% for article in articles %}
+                <div class="article">
+                    <div>
+                        <div class="title">{{ article.title }}</div>
+                        <div class="url"><a href="{{ article.url }}" target="_blank"><i class="fa-solid fa-link"></i> {{ article.url }}</a></div>
+                        {% if article.summary %}
+                            <div class="summary"><strong>Summary:</strong> {{ article.summary }}</div>
+                        {% endif %}
+                    </div>
+                    <a class="read-more-btn" href="{{ article.url }}" target="_blank">
+                        Read More <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
                 </div>
-            {% endif %}
+            {% endfor %}
         </div>
-    {% endfor %}
+    </div>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>AI News Scraper</title>
+    <meta http-equiv="refresh" content="5">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Fonts for Professional Look -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 98vw;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(60,72,100,0.11);
+            padding: 30px 20px 20px 20px;
+        }
+        h1 {
+            font-weight: 700;
+            font-size: 2.2em;
+            color: #2a2e62;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            text-align: center;
+        }
+        .subheading {
+            text-align: center;
+            color: #5361c2;
+            margin-bottom: 28px;
+            font-size: 1.08em;
+        }
+        .loading {
+            font-size: 1.12em;
+            color: #27ae60;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .news-list {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 24px;
+            padding-bottom: 10px;
+        }
+        .article {
+            background: #f7f8fc;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(60,72,100,0.09);
+            padding: 22px 22px 14px 22px;
+            min-width: 340px;
+            max-width: 420px;
+            min-height: 220px;
+            transition: box-shadow 0.22s;
+            position: relative;
+            overflow: hidden;
+            flex: 0 0 340px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .article:hover {
+            box-shadow: 0 10px 24px rgba(60,72,100,0.15);
+            background: #e4eafe;
+        }
+        .title {
+            font-weight: 700;
+            font-size: 1.15em;
+            color: #24347c;
+            margin-bottom: 5px;
+        }
+        .url {
+            font-size: 0.95em;
+            color: #626c91;
+            margin-bottom: 10px;
+            overflow-wrap: break-word;
+        }
+        .url a {
+            color: #6e7cff;
+            text-decoration: none;
+            transition: color 0.22s;
+        }
+        .url a:hover {
+            color: #1d2982;
+            text-decoration: underline;
+        }
+        .summary {
+            background: #eaf0fe;
+            padding: 13px 11px;
+            border-radius: 8px;
+            margin-bottom: 13px;
+            color: #374151;
+            line-height: 1.55;
+            font-size: 1.04em;
+            min-height: 60px;
+            position: relative;
+        }
+        .summary strong {
+            color: #2a2e62;
+        }
+        .read-more-btn {
+            display: inline-block;
+            padding: 8px 20px 8px 18px;
+            background: linear-gradient(90deg, #6e7cff 60%, #5361c2 100%);
+            color: #fff;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background 0.22s, transform 0.17s;
+            margin-top: 8px;
+            box-shadow: 0 2px 6px rgba(60,72,100,0.11);
+            position: relative;
+        }
+        .read-more-btn i {
+            margin-left: 8px;
+            font-size: 1.05em;
+            vertical-align: middle;
+        }
+        .read-more-btn:hover {
+            background: linear-gradient(90deg, #5361c2 30%, #2a2e62 100%);
+            color: #fffbfc;
+        }
+        @media (max-width: 980px) {
+            .container { padding: 13px 1vw;}
+            .news-list { gap: 14px;}
+            .article { min-width: 80vw; max-width: 90vw;}
+        }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.3em;}
+            .news-list { gap: 7vw;}
+            .article { min-width: 93vw; max-width: 98vw; padding: 10px 6px;}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fa-solid fa-robot"></i> AI News Scraper</h1>
+        <div class="subheading">Stay updated with the latest headlines, summarized by AI. <i class="fa-solid fa-bolt"></i></div>
+        {% if processing %}
+            <div class="loading"><i class="fa-solid fa-spinner"></i> Processing articles, please wait...</div>
+        {% endif %}
+        <div class="news-list">
+            {% for article in articles %}
+                <div class="article">
+                    <div>
+                        <div class="title">{{ article.title }}</div>
+                        <div class="url"><a href="{{ article.url }}" target="_blank"><i class="fa-solid fa-link"></i> {{ article.url }}</a></div>
+                        {% if article.summary %}
+                            <div class="summary"><strong>Summary:</strong> {{ article.summary }}</div>
+                        {% endif %}
+                    </div>
+                    <a class="read-more-btn" href="{{ article.url }}" target="_blank">
+                        Read More <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 </body>
 </html>
