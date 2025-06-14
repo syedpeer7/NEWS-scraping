@@ -1,18 +1,31 @@
 from flask import Flask, render_template
-from scraper import fetch_bulk_articles_from_main_page
+from scraper import fetch_article_links, fetch_article
+import threading
 
 app = Flask(__name__)
 
-# Replace these with real, working news article URLs!
-sample_urls = [
-    "https://timesofindia.indiatimes.com/india/morning-newswrap-iran-strikes-back-at-israel-ahmedabad-plane-crash-toll-mounts-to-274-and-more/articleshow/121842028.cms",
-    # Add more working news URLs here
-]
+ARTICLES_CACHE = []
+PROCESSING = False
+
+def process_articles(main_url, max_articles=10):
+    global ARTICLES_CACHE, PROCESSING
+    PROCESSING = True
+    ARTICLES_CACHE.clear()
+    links = fetch_article_links(main_url)
+    for url in links[:max_articles]:
+        article = fetch_article(url)
+        ARTICLES_CACHE.append(article)
+    PROCESSING = False
 
 @app.route("/")
 def index():
-    articles = fetch_bulk_articles_from_main_page("https://timesofindia.indiatimes.com/")
-    return render_template("index.html", articles=articles)
+    global PROCESSING
+    if not ARTICLES_CACHE and not PROCESSING:
+        # Start processing in the background if not already running
+        thread = threading.Thread(target=process_articles, args=("https://timesofindia.indiatimes.com/", 10), daemon=True)
+        thread.start()
+        PROCESSING = True
+    return render_template("index.html", articles=ARTICLES_CACHE, processing=PROCESSING)
 
 if __name__ == "__main__":
     app.run(debug=True)
