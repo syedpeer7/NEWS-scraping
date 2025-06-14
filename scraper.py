@@ -2,12 +2,43 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
+
+def gemini_summarize(text):
+    import requests
+    import os
+
+    GEMINI_API_KEY = ""  # Replace with your actual key
+    GEMINI_MODEL = "gemini-2.0-flash"  # or "gemini-pro"
+    GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+
+    if not text.strip():
+        return ""
+    prompt = f"Summarize the following news article in 5-7 concise sentences:\n\n{text[:6000]}"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": prompt
+                    }
+                ]
+            }
+        ]
+    }
+    try:
+        response = requests.post(GEMINI_API_URL, headers=headers, json=data, timeout=20)
+        response.raise_for_status()
+        summary = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+        return summary
+    except Exception as e:
+        return f"Summarization failed: {e}"
 def fetch_article(url):
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
     except Exception as e:
-        return {'url': url, 'title': 'Failed to fetch', 'text': f'Error: {e}'}
+        return {'url': url, 'title': 'Failed to fetch', 'text': f'Error: {e}', 'summary': ''}
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -25,17 +56,21 @@ def fetch_article(url):
 
     # Collect all content: headings, paragraphs, bullet points
     content_parts = []
-    for tag in article_container.find_all([ 'span','h1', 'h2', 'h3', 'h4', 'p', 'li']):
+    for tag in article_container.find_all(['h1', 'h2', 'h3', 'h4', 'p', 'li']):
         text = tag.get_text(strip=True)
         if text:
             content_parts.append(text)
 
     article_text = "\n\n".join(content_parts)
 
+    # Get summary from Gemini
+    summary = gemini_summarize(article_text)
+
     return {
         'url': url,
         'title': title,
-        'text': article_text
+        'text': article_text,
+        'summary': summary
     }
 
 def fetch_bulk_articles(url_list):
